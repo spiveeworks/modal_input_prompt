@@ -126,10 +126,11 @@ bool match_keyword(
     return true;
 }
 
-bool match_or_explain_keyword(
+bool match_or_explain_keyword_detailed(
     string_buffer *words,
     char *keyword,
     char *help_message,
+    char *detailed_help_message,
     bool help,
     bool *any_matched_out
 ) {
@@ -137,15 +138,14 @@ bool match_or_explain_keyword(
     /* print all basic help messages when a command like `help` was written by
        itself. */
     if (help && arrlen(*words) == 0 && !any_matched) {
-        printf("%s\n", help_message);
+        printf("%s", help_message);
         return false;
     }
     /* otherwise, we have to actually check if this command is the one that was
-       written, and either display help about just this command, or run the
-       command. */
+       written, and either display detailed help, or run the command. */
     if (match_keyword(words, keyword, any_matched_out)) {
         if (help) {
-            printf("%s\n", help_message);
+            printf("%s", detailed_help_message);
             return false;
         } else {
             return true;
@@ -154,6 +154,49 @@ bool match_or_explain_keyword(
 
     return false;
 }
+
+bool match_or_explain_keyword(
+    string_buffer *words,
+    char *keyword,
+    char *help_message,
+    bool help,
+    bool *any_matched_out
+) {
+    return match_or_explain_keyword_detailed(
+        words,
+        keyword,
+        help_message,
+        help_message,
+        help,
+        any_matched_out
+    );
+}
+
+bool match_or_explain_keyword_simple(
+    string_buffer *words,
+    char *keyword,
+    char *help_message,
+    bool help,
+    bool *any_matched_out
+) {
+    if (!match_or_explain_keyword(
+        words,
+        keyword,
+        help_message,
+        help,
+        any_matched_out
+    )) {
+        return false;
+    }
+    /* else it did match. */
+    if (arrlen(*words) > 0) {
+        printf("'%s' does not take any arguments.\n", keyword);
+        return false;
+    }
+    /* else there are no arguments */
+    return true;
+}
+
 
 int main(int cli_arg_count, char **cli_args) {
     while (true) {
@@ -168,10 +211,14 @@ int main(int cli_arg_count, char **cli_args) {
 
         bool any_matched = false;
 
-        if (match_or_explain_keyword(
+        if (match_or_explain_keyword_detailed(
             &words,
             "echo",
-            "echo: Prints input back to the screen.",
+            "echo: Prints input back to the screen.\n",
+
+            "Usage: echo [argument] [...]\n"
+            "Print arguments to the screen. Words with multiple spaces or tabs\n"
+            "between them will be printed with a single space between them instead.\n",
             help,
             &any_matched
         )) {
@@ -182,10 +229,10 @@ int main(int cli_arg_count, char **cli_args) {
             printf("\n");
         }
 
-        if (match_or_explain_keyword(
+        if (match_or_explain_keyword_simple(
             &words,
             "exit",
-            "exit: Stop taking input and close the program.",
+            "exit: Stop taking input and close the program.\n",
             help,
             &any_matched
         )) {
@@ -194,10 +241,14 @@ int main(int cli_arg_count, char **cli_args) {
 
         /* This will never return true, since the only line that will trigger
            it is `help help`. We just want help to have a help message. */
-        match_or_explain_keyword(
+        match_or_explain_keyword_detailed(
             &words,
             "help",
-            "help: Lists commands and explains their usage.",
+            "help: Lists commands and explains their usage.\n",
+
+            "Usage: help [command]\n"
+            "Print a detailed message about how to use the given command. If no command\n"
+            "is specified, then a summary of all available commands is given instead.\n",
             help,
             &any_matched
         );
