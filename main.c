@@ -65,11 +65,107 @@ char_buffer read_line(void) {
     return result;
 }
 
+string_buffer split_words(char_buffer line) {
+    int line_len = arrlen(line);
+
+    string_buffer result = NULL;
+    char_buffer next = NULL;
+
+    for (int i = 0; i < line_len; i++) {
+        char c = line[i];
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\0') {
+            if (arrlen(next) > 0) {
+                arrpush(next, '\0');
+                arrpop(next);
+
+                arrpush(result, next);
+                next = NULL;
+            }
+        } else {
+            arrpush(next, c);
+        }
+    }
+
+    if (arrlen(next) > 0) {
+        arrpush(next, '\0');
+        arrpop(next);
+
+        arrpush(result, next);
+        next = NULL;
+    }
+
+    return result;
+}
+
+bool compare_charbuff_cstr(char_buffer buff, char *cstr) {
+    int cstr_len = strlen(cstr);
+
+    if (cstr_len != arrlen(buff)) return false;
+    /* else */
+    return strncmp(buff, cstr, cstr_len) == 0;
+}
+
+bool match_keyword(
+    string_buffer *words,
+    char *keyword
+) {
+    if (compare_charbuff_cstr((*words)[0], keyword)) {
+        arrdel(*words, 0);
+        return true;
+    }
+
+    return false;
+}
+
+bool match_or_explain_keyword(
+    string_buffer *words,
+    char *keyword,
+    char *help_message,
+    bool help
+) {
+    if (help) {
+        printf("%s\n", help_message);
+    } else if (compare_charbuff_cstr((*words)[0], keyword)) {
+        arrdel(*words, 0);
+        return true;
+    }
+
+    return false;
+}
+
 int main(int cli_arg_count, char **cli_args) {
-    char_buffer line = read_line();
+    while (true) {
+        printf(">");
+        char_buffer line = read_line();
 
-    printf("%s\n", line);
+        string_buffer words = split_words(line);
 
-    exit(0);
+        if (arrlen(words) == 0) continue;
+
+        bool help = match_keyword(&words, "help");
+
+        if (match_or_explain_keyword(
+            &words,
+            "echo",
+            "echo: Prints input back to the screen.",
+            help
+        )) {
+            for (int i = 0; i < arrlen(words); i++) {
+                if (i > 0) printf(" ");
+                printf("%s", words[i]);
+            }
+            printf("\n");
+        } else if (match_or_explain_keyword(
+            &words,
+            "exit",
+            "exit: Stop taking input and close the program.",
+            help
+        )) {
+            exit(0);
+        } else if (!help) {
+            printf("Unknown command '%s'. Type 'help' for a list of "
+                "commands.\n", words[0]);
+        }
+    }
 }
 
