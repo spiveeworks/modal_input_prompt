@@ -107,27 +107,49 @@ bool compare_charbuff_cstr(char_buffer buff, char *cstr) {
 
 bool match_keyword(
     string_buffer *words,
-    char *keyword
+    char *keyword,
+    bool *any_matched_out
 ) {
-    if (compare_charbuff_cstr((*words)[0], keyword)) {
-        arrdel(*words, 0);
-        return true;
-    }
+    bool any_matched = any_matched_out ? *any_matched_out : false;
 
-    return false;
+    if (any_matched) return false;
+
+    if (arrlen(*words) == 0) return false;
+
+    bool this_matched = compare_charbuff_cstr((*words)[0], keyword);
+    if (!this_matched) return false;
+
+    /* else matched */
+    if (any_matched_out) *any_matched_out = true;
+
+    arrdel(*words, 0);
+    return true;
 }
 
 bool match_or_explain_keyword(
     string_buffer *words,
     char *keyword,
     char *help_message,
-    bool help
+    bool help,
+    bool *any_matched_out
 ) {
-    if (help) {
+    bool any_matched = any_matched_out ? *any_matched_out : false;
+    /* print all basic help messages when a command like `help` was written by
+       itself. */
+    if (help && arrlen(*words) == 0 && !any_matched) {
         printf("%s\n", help_message);
-    } else if (compare_charbuff_cstr((*words)[0], keyword)) {
-        arrdel(*words, 0);
-        return true;
+        return false;
+    }
+    /* otherwise, we have to actually check if this command is the one that was
+       written, and either display help about just this command, or run the
+       command. */
+    if (match_keyword(words, keyword, any_matched_out)) {
+        if (help) {
+            printf("%s\n", help_message);
+            return false;
+        } else {
+            return true;
+        }
     }
 
     return false;
@@ -142,27 +164,45 @@ int main(int cli_arg_count, char **cli_args) {
 
         if (arrlen(words) == 0) continue;
 
-        bool help = match_keyword(&words, "help");
+        bool help = match_keyword(&words, "help", NULL);
+
+        bool any_matched = false;
 
         if (match_or_explain_keyword(
             &words,
             "echo",
             "echo: Prints input back to the screen.",
-            help
+            help,
+            &any_matched
         )) {
             for (int i = 0; i < arrlen(words); i++) {
                 if (i > 0) printf(" ");
                 printf("%s", words[i]);
             }
             printf("\n");
-        } else if (match_or_explain_keyword(
+        }
+
+        if (match_or_explain_keyword(
             &words,
             "exit",
             "exit: Stop taking input and close the program.",
-            help
+            help,
+            &any_matched
         )) {
             exit(0);
-        } else if (!help) {
+        }
+
+        /* This will never return true, since the only line that will trigger
+           it is `help help`. We just want help to have a help message. */
+        match_or_explain_keyword(
+            &words,
+            "help",
+            "help: Lists commands and explains their usage.",
+            help,
+            &any_matched
+        );
+
+        if (!any_matched && arrlen(words) > 0) {
             printf("Unknown command '%s'. Type 'help' for a list of "
                 "commands.\n", words[0]);
         }
