@@ -98,6 +98,26 @@ string_buffer split_words(char_buffer line) {
     return result;
 }
 
+string_buffer prompt_allow_empty(char *prompt_text) {
+    printf("%s", prompt_text);
+
+    char_buffer line = read_line();
+
+    return split_words(line);
+}
+
+string_buffer prompt(char *prompt_text) {
+    while (true) {
+        string_buffer words = prompt_allow_empty(prompt_text);
+
+        if (arrlen(words) != 0) return words;
+        /* else */
+
+        /* Probably does nothing. */
+        arrfree(words);
+    }
+}
+
 bool compare_charbuff_cstr(char_buffer buff, char *cstr) {
     int cstr_len = strlen(cstr);
 

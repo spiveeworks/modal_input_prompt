@@ -10,12 +10,7 @@
 
 int main(int cli_arg_count, char **cli_args) {
     while (true) {
-        printf(">");
-        char_buffer line = read_line();
-
-        string_buffer words = split_words(line);
-
-        if (arrlen(words) == 0) continue;
+        string_buffer words = prompt(">");
 
         bool help = match_keyword(&words, "help", NULL);
 
