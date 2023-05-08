@@ -18,6 +18,14 @@ struct string_offset {
 
 typedef char_buffer *string_buffer;
 
+void sbfree(string_buffer *it) {
+    int string_count = arrlen(*it);
+    for (int i = 0; i < string_count; i++) arrfree((*it)[i]);
+
+    arrfree(*it);
+    *it = NULL;
+}
+
 char_buffer read_line(void) {
     char_buffer result = NULL;
     int read_count = 0;

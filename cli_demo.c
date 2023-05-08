@@ -75,6 +75,8 @@ int main(int cli_arg_count, char **cli_args) {
             printf("Unknown command '%s'. Type 'help' for a list of "
                 "commands.\n", words[0]);
         }
+
+        sbfree(&words);
     }
 }
 
