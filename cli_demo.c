@@ -34,6 +34,19 @@ int main(int cli_arg_count, char **cli_args) {
             printf("\n");
         }
 
+        if (match_or_explain_keyword(
+            &words,
+            "multiple word test",
+            "multiple word test: Dummy command to test keyword parsing.\n",
+            help,
+            &any_matched
+        )) {
+            printf(
+                "Multiple word test was run with %d arguments.\n",
+                (int)arrlen(words)
+            );
+        }
+
         if (match_or_explain_keyword_simple(
             &words,
             "exit",

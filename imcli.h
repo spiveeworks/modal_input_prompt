@@ -66,12 +66,46 @@ char_buffer read_line(void) {
     return result;
 }
 
+void find_next_word(
+    char *data,
+    int str_len,
+    int search_from,
+    int *start_out,
+    int *length_out
+) {
+    int length = 0;
+    while (search_from < str_len) {
+        char c = data[search_from];
+        if (!(c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\0')) {
+            break;
+        }
+        /* else */
+        search_from += 1;
+    }
+
+    int start = search_from;
+
+    while (search_from + length < str_len) {
+        char c = data[search_from + length];
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\0') {
+            break;
+        }
+        /* else */
+        length += 1;
+    }
+
+    if (start_out) *start_out = start;
+    if (length_out) *length_out = length;
+}
+
 string_buffer split_words(char_buffer line) {
     int line_len = arrlen(line);
 
     string_buffer result = NULL;
     char_buffer next = NULL;
 
+    /* We could use the above find_next_word function, but it's honestly
+       simpler rolled together than otherwise. */
     for (int i = 0; i < line_len; i++) {
         char c = line[i];
         if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\0') {
@@ -118,32 +152,59 @@ string_buffer prompt(char *prompt_text) {
     }
 }
 
-bool compare_charbuff_cstr(char_buffer buff, char *cstr) {
-    int cstr_len = strlen(cstr);
-
-    if (cstr_len != arrlen(buff)) return false;
-    /* else */
-    return strncmp(buff, cstr, cstr_len) == 0;
+bool compare_charbuff_str_slice(char_buffer buff, char *str, int len) {
+    return len == arrlen(buff) && strncmp(buff, str, len) == 0;
 }
 
 bool match_keyword(
     string_buffer *words,
-    char *keyword,
+    char *keywords,
     bool *any_matched_out
 ) {
+    /* Check if something has already matched. */
     bool any_matched = any_matched_out ? *any_matched_out : false;
 
     if (any_matched) return false;
 
-    if (arrlen(*words) == 0) return false;
+    /* Check that all the keywords do match. */
+    int keyword_count = 0;
 
-    bool this_matched = compare_charbuff_cstr((*words)[0], keyword);
-    if (!this_matched) return false;
+    int str_len = strlen(keywords);
 
-    /* else matched */
+    int word_start = 0;
+    int word_len = 0;
+
+    while (word_start + word_len < str_len) {
+        find_next_word(
+            keywords,
+            str_len,
+            word_start + word_len,
+            &word_start,
+            &word_len
+        );
+
+        if (word_len == 0) break;
+
+        if (arrlen(*words) <= keyword_count) return false;
+
+        bool matched = compare_charbuff_str_slice(
+            (*words)[keyword_count],
+            &keywords[word_start],
+            word_len
+        );
+
+        if (!matched) return false;
+
+        keyword_count += 1;
+    }
+
+    /* Match successful. */
+
+    for (int i = 0; i < keyword_count; i++) arrfree((*words)[i]);
+    arrdeln(*words, 0, keyword_count);
+
     if (any_matched_out) *any_matched_out = true;
 
-    arrdel(*words, 0);
     return true;
 }
 
