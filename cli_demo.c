@@ -27,11 +27,9 @@ int main(int cli_arg_count, char **cli_args) {
             help,
             &any_matched
         )) {
-            for (int i = 0; i < arrlen(words); i++) {
-                if (i > 0) printf(" ");
-                printf("%s", words[i]);
-            }
-            printf("\n");
+            char_buffer rest = join_words(words);
+            printf("%s\n", rest);
+            arrfree(rest);
         }
 
         if (match_or_explain_keyword(

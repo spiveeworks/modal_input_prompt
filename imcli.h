@@ -18,6 +18,34 @@ struct string_offset {
 
 typedef char_buffer *string_buffer;
 
+char_buffer join_strings(string_buffer words, char *delim) {
+    int delim_len = strlen(delim);
+
+    char_buffer out = NULL;
+
+    int count = arrlen(words);
+    for (int i = 0; i < count; i++) {
+        if (i > 0) {
+            char *spot = arraddnptr(out, delim_len);
+            memcpy(spot, delim, delim_len);
+        }
+
+        char_buffer next = words[i];
+
+        char *spot = arraddnptr(out, arrlen(next));
+        memcpy(spot, next, arrlen(next));
+    }
+
+    arrpush(out, '\0');
+    arrpop(out);
+
+    return out;
+}
+
+char_buffer join_words(string_buffer words) {
+    return join_strings(words, " ");
+}
+
 void sbfree(string_buffer *it) {
     int string_count = arrlen(*it);
     for (int i = 0; i < string_count; i++) arrfree((*it)[i]);
