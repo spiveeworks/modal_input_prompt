@@ -173,7 +173,10 @@ string_buffer prompt_allow_empty(char *prompt_text) {
 
     char_buffer line = read_line();
 
-    return split_words(line);
+    string_buffer result = split_words(line);
+    arrfree(line);
+
+    return result;
 }
 
 string_buffer prompt(char *prompt_text) {
